@@ -1,6 +1,7 @@
 from flask import Blueprint
 from models.movie import Movie
 from extensions import db
+from sqlalchemy import select
 
 # movies_bp = Blueprint("movies_bp", __name__)
 
@@ -95,13 +96,37 @@ movies = [
     },
 ]
 
+HTTP_SERVER_ERROR = 500
+
 
 movies_bp = Blueprint("movies_bp", __name__)
 
 
 @movies_bp.get("/")
-def allmovie():
-    return movies
+def get_all_movies():
+    #  Select * from movies - Black Box - Learning
+    data = db.session.execute(select(Movie).order_by(Movie.id)).scalars().all()
+
+    # empt_data = []
+    # for movie in data:
+    #     empt_data.append(movie.to_dict())
+    # print(empt_data)
+    empt_data = []
+    for movie in data:
+        empt_data.append(movie.to_dict())
+    return empt_data
+
+    # Python
+    # print(data[0].to_dict())
+    # print(data[1].to_dict())
+    # print(data[Movie])
+
+    # return movies
+
+
+# @movies_bp.get("/")
+# def allmovie():
+#     return movies
 
 
 # get------------------------------------------------------------
@@ -121,8 +146,19 @@ def specificmovie(id):
 # delete-----------------------------------------------------------------
 @movies_bp.delete("/<id>")
 def removemovie(id):
-    for movie in movies:
-        if movie["id"] == id:
-            movies.remove(movie)
-            return {"data": movie, "message": "remove sucessfully"}
-    return ({"message": "movie not found"}, 404)
+
+    movie = db.session.get(Movie, id)
+    if not movie:
+        return {"message": "movie not found"}, 404
+    try:
+        db.session.delete(movie)
+        db.session.commit()
+    except Exception as err:
+        db.session.rollback()
+        return {"message": str(err)}, HTTP_SERVER_ERROR
+    return {"data": movie.to_dict(), "message": "movie delete successfully"}
+    # for movie in movies:
+    #     if movie["id"] == id:
+    #         movies.remove(movie)
+    #         return {"data": movie, "message": "remove sucessfully"}
+    # return ({"message": "movie not found"}, 404)

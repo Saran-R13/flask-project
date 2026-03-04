@@ -22,6 +22,6 @@ class Movie(Base):
             "name": self.name,
             "poster": self.poster,
             "summary": self.summary,
-            "rating": self.rating,
+            "rating": float(self.rating),
             "trailer": self.trailer,
         }
