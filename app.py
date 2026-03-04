@@ -6,11 +6,11 @@ from extensions import db
 from sqlalchemy.sql import text
 
 app = Flask(__name__)
-app.config.from_object(Config)  # URL
+app.config.from_object(Config)  # URL dial the num consept
 
-db.init_app(app)
+db.init_app(app) # call goo concept
 
-
+# Testing DB connecting
 with app.app_context():
     try:
         result = db.session.execute(text("SELECT 1")).fetchall()

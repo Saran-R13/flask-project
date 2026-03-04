@@ -1,6 +1,8 @@
 from flask import Blueprint
+from models.movie import Movie
+from extensions import db
 
-movies_bp = Blueprint("movies_bp", __name__)
+# movies_bp = Blueprint("movies_bp", __name__)
 
 movies = [
     {
@@ -94,6 +96,9 @@ movies = [
 ]
 
 
+movies_bp = Blueprint("movies_bp", __name__)
+
+
 @movies_bp.get("/")
 def allmovie():
     return movies
@@ -102,10 +107,15 @@ def allmovie():
 # get------------------------------------------------------------
 @movies_bp.get("/<id>")
 def specificmovie(id):
-    for movie in movies:
-        if movie["id"] == id:
-            return movie
-    return ({"message": "movie not found"}, 404)
+    # for movie in movies:
+    #     if movie["id"] == id:
+    #         return movie
+    # return ({"message": "movie not found"}, 404)
+    data = db.session.get(Movie, id)
+    if not data:
+        return {"message": "movie not found"}, 404
+
+    return data.to_dict()
 
 
 # delete-----------------------------------------------------------------
