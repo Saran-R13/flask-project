@@ -4,3 +4,6 @@ the method is said to be a controller
 
 
 netlify 
+
+Authondication- who  you are
+Authorization- waht to you do

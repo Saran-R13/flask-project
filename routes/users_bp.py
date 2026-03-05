@@ -1,5 +1,5 @@
 from flask import Blueprint, request
-from models.movie import Movie
+from models.user import User
 from extensions import db
 from sqlalchemy import select
 
@@ -96,119 +96,137 @@ movies = [
     },
 ]
 
+HTTP_NOT_FOUND = 404
 HTTP_SERVER_ERROR = 500
+HTTP_USER_ERROR = 400
 
 
-movies_bp = Blueprint("movies_bp", __name__)
-
-
-@movies_bp.get("/")
-def get_all_movies():
-    #  Select * from movies - Black Box - Learning
-    data = db.session.execute(select(Movie).order_by(Movie.id)).scalars().all()
-
-    # empt_data = []
-    # for movie in data:
-    #     empt_data.append(movie.to_dict())
-    # print(empt_data)
-    empt_data = []
-    for movie in data:
-        empt_data.append(movie.to_dict())
-    return empt_data
-
-    # Python
-    # print(data[0].to_dict())
-    # print(data[1].to_dict())
-    # print(data[Movie])
-
-    # return movies
-
-
-# @movies_bp.get("/")
-# def allmovie():
-#     return movies
-
-
-# get------------------------------------------------------------
-@movies_bp.get("/<id>")
-def specificmovie(id):
-    # for movie in movies:
-    #     if movie["id"] == id:
-    #         return movie
-    # return ({"message": "movie not found"}, 404)
-    data = db.session.get(Movie, id)
-    if not data:
-        return {"message": "movie not found"}, 404
-
-    return data.to_dict()
-
-
-# delete-----------------------------------------------------------------
-@movies_bp.delete("/<id>")
-def removemovie(id):
-
-    movie = db.session.get(Movie, id)
-    if not movie:
-        return {"message": "movie not found"}, 404
-    try:
-        db.session.delete(movie)
-        db.session.commit()
-    except Exception as err:
-        db.session.rollback()
-        return {"message": str(err)}, HTTP_SERVER_ERROR
-    return {"data": movie.to_dict(), "message": "movie delete successfully"}
-    # for movie in movies:
-    #     if movie["id"] == id:
-    #         movies.remove(movie)
-    #         return {"data": movie, "message": "remove sucessfully"}
-    # return ({"message": "movie not found"}, 404)
+users_bp = Blueprint("users_bp", __name__)
 
 
 # add----------------------------------------------------------------------------------------------
 
 
-@movies_bp.post("/")
-def create_movies():
+@users_bp.post("/signup")
+def signup_user():
 
     data = request.get_json()
+    username = data.get("username")
+    password = data.get("password")
 
-    new_movie = Movie(
-        name=data["name"],
-        poster=data["poster"],
-        summary=data["summary"],
-        rating=data["rating"],
-        trailer=data["trailer"],
-    )
-    try:
-        db.session.add(new_movie)
-        db.session.commit()
-    except Exception as err:
-        db.session.rollback()
-        return {"message": str(err)}, HTTP_SERVER_ERROR
+    stmt = select(User).where(User.username == username)
+    db_user = db.session.execute(stmt).scalar().all()
 
-    return {"data": new_movie.to_dict(), "message": "movie Add successfully"}
+    if db_user:
+        return {"error": "username already taken"}, HTTP_USER_ERROR
+
+    new_user = User(username=username, password=password)
+    db.session.add(new_user)
+    db.session.commit()
+
+    return new_user.to_dict()
+
+    # new_movie = Movie(
+    #     name=data["name"],
+    #     poster=data["poster"],
+    #     summary=data["summary"],
+    #     rating=data["rating"],
+    #     trailer=data["trailer"],
+    # )
+    # try:
+    #     db.session.add(new_movie)
+    #     db.session.commit()
+    # except Exception as err:
+    #     db.session.rollback()
+    #     return {"message": str(err)}, HTTP_SERVER_ERROR
+
+    # return {"data": new_movie.to_dict(), "message": "movie Add successfully"}
+
+
+# -------------------------------------------------------------------------------------------------------
+
+# @users_bp.get("/api/auth/")
+# def get_all_movies():
+#     #  Select * from movies - Black Box - Learning
+#     data = db.session.execute(select(Movie).order_by(Movie.id)).scalars().all()
+
+#     # empt_data = []
+#     # for movie in data:
+#     #     empt_data.append(movie.to_dict())
+#     # print(empt_data)
+#     empt_data = []
+#     for movie in data:
+#         empt_data.append(movie.to_dict())
+#     return empt_data
+
+#     # Python
+#     # print(data[0].to_dict())
+#     # print(data[1].to_dict())
+#     # print(data[Movie])
+
+#     # return movies
+
+
+# # @movies_bp.get("/")
+# # def allmovie():
+# #     return movies
+
+
+# # get------------------------------------------------------------
+# @users_bp.get("/<id>")
+# def specificmovie(id):
+#     # for movie in movies:
+#     #     if movie["id"] == id:
+#     #         return movie
+#     # return ({"message": "movie not found"}, 404)
+#     data = db.session.get(Movie, id)
+#     if not data:
+#         return {"message": "movie not found"}, 404
+
+#     return data.to_dict()
+
+
+# # delete-----------------------------------------------------------------
+# @users_bp.delete("/<id>")
+# def removemovie(id):
+
+#     movie = db.session.get(Movie, id)
+#     if not movie:
+#         return {"message": "movie not found"}, 404
+#     try:
+#         db.session.delete(movie)
+#         db.session.commit()
+#     except Exception as err:
+#         db.session.rollback()
+#         return {"message": str(err)}, HTTP_SERVER_ERROR
+#     return {"data": movie.to_dict(), "message": "movie delete successfully"}
+#     # for movie in movies:
+#     #     if movie["id"] == id:
+#     #         movies.remove(movie)
+#     #         return {"data": movie, "message": "remove sucessfully"}
+#     # return ({"message": "movie not found"}, 404)
 
 
 # UPDATE---------------------------------------------------------------------------------------------------------
 
 
-@movies_bp.put("/<id>")
-def update_movies(id):
-    update_movie = request.get_json()
+# @users_bp.put("/<id>")
+# def update_movies(id):
+#     update_movie = request.get_json()
 
-    db_movie = db.session.get(Movie, id)
-    if not db_movie:
-        return {"message": "movie not found"}, 404
-    db_movie.name = update_movie.get("name")
-    db_movie.poster = update_movie.get("poster")
-    db_movie.summary = update_movie.get("summary")  # None
-    db_movie.rating = update_movie.get("rating")
-    db_movie.trailer = update_movie.get("trailer")
+#     db_movie = db.session.get(Movie, id)
+#     if not db_movie:
+#         return {"message": "movie not found"}, 404
+#     db_movie.name = update_movie.get("name")
+#     db_movie.poster = update_movie.get("poster")
+#     db_movie.summary = update_movie.get("summary")  # None
+#     db_movie.rating = update_movie.get("rating")
+#     db_movie.trailer = update_movie.get("trailer")
 
-    try:
-        db.session.commit()  # permanent
-    except Exception as err:
-        db.session.rollback()  # Undo
-        return {"message": str(err)}, HTTP_SERVER_ERROR
+#     try:
+#         db.session.commit()  # permanent
+#     except Exception as err:
+#         db.session.rollback()  # Undo
+#         return {"message": str(err)}, HTTP_SERVER_ERROR
 
-    return {"data": db_movie.to_dict(), "message": "movie updated successfully"}
+#     return {"data": db_movie.to_dict(), "message": "movie updated successfully"}
