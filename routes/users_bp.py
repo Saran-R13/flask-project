@@ -115,7 +115,7 @@ def signup_user():
     password = data.get("password")
 
     stmt = select(User).where(User.username == username)
-    db_user = db.session.execute(stmt).scalar().all()
+    db_user = db.session.execute(stmt).scalars().all()
 
     if db_user:
         return {"error": "username already taken"}, HTTP_USER_ERROR
