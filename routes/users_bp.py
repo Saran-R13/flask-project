@@ -2,6 +2,8 @@ from flask import Blueprint, request
 from models.user import User
 from extensions import db
 from sqlalchemy import select
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_jwt_extended import create_access_token
 
 # movies_bp = Blueprint("movies_bp", __name__)
 
@@ -99,7 +101,7 @@ movies = [
 HTTP_NOT_FOUND = 404
 HTTP_SERVER_ERROR = 500
 HTTP_USER_ERROR = 400
-
+HTTP_CREATED = 201
 
 users_bp = Blueprint("users_bp", __name__)
 
@@ -120,11 +122,49 @@ def signup_user():
     if db_user:
         return {"error": "username already taken"}, HTTP_USER_ERROR
 
-    new_user = User(username=username, password=password)
-    db.session.add(new_user)
-    db.session.commit()
+    try:
+        new_user = User(username=username, password=generate_password_hash(password))
+        db.session.add(new_user)
+        db.session.commit()
+    except Exception as err:
+        db.session.rollback()
+        return {"message": str(err)}, HTTP_SERVER_ERROR
 
-    return new_user.to_dict()
+    return {
+        "data": new_user.to_dict(),
+        "message": "User Signed up successfully",
+    }, HTTP_CREATED
+
+
+# -------------------------------------------------------------------------------
+
+
+@users_bp.post("/login")
+def login_user():
+
+    data = request.get_json()
+    username = data.get("username")
+    password = data.get("password")
+
+    stmt = select(User).where(User.username == username)
+    db_user = db.session.execute(stmt).scalar_one_or_none()
+
+    if not db_user:
+        return {"error": "Invalid credentials"}, HTTP_SERVER_ERROR
+    if not check_password_hash(db_user.password, password):
+        return {"error": "Invalied Crediantial"}, HTTP_SERVER_ERROR
+
+    token = create_access_token(identity=username)
+    return {"message": "Login Successful", "token": token}
+
+    # if db_user:
+    #     return {"message": "Login Succ"}, HTTP_USER_ERROR
+
+    # new_user = User(username=username, password=password)
+    # db.session.add(new_user)
+    # db.session.commit()
+
+    # return new_user.to_dict()
 
     # new_movie = Movie(
     #     name=data["name"],

@@ -7,3 +7,7 @@ netlify
 
 Authondication- who  you are
 Authorization- waht to you do
+
+
+
+password use panni hash aa aka oru package venum"werkzeug"

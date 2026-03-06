@@ -2,6 +2,7 @@ from flask import Blueprint, request
 from models.movie import Movie
 from extensions import db
 from sqlalchemy import select
+from flask_jwt_extended import jwt_required
 
 # movies_bp = Blueprint("movies_bp", __name__)
 
@@ -103,6 +104,7 @@ movies_bp = Blueprint("movies_bp", __name__)
 
 
 @movies_bp.get("/")
+@jwt_required()
 def get_all_movies():
     #  Select * from movies - Black Box - Learning
     data = db.session.execute(select(Movie).order_by(Movie.id)).scalars().all()
@@ -131,7 +133,9 @@ def get_all_movies():
 
 # get------------------------------------------------------------
 @movies_bp.get("/<id>")
+@jwt_required()
 def specificmovie(id):
+
     # for movie in movies:
     #     if movie["id"] == id:
     #         return movie
